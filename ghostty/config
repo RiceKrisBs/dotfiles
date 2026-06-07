@@ -1,0 +1,4 @@
+# Ghostty configuration
+# Nerd Font required for Powerlevel10k glyphs (installed via: brew install font-meslo-lg-nerd-font)
+font-family = "MesloLGS NF"
+font-size = 13

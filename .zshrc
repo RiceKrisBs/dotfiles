@@ -1,3 +1,10 @@
+# Enable Powerlevel10k instant prompt. Must stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 export PATH="$HOME/src/git.fullscript.io/kris.bucyk/dotfiles/bin:$PATH"
 
 alias temail='echo -n "kris.bucyk+$(date "+%Y%m%d%H%M")@fullscript.com" | tee /dev/tty | pbcopy'
@@ -16,11 +23,10 @@ ctof() { echo "scale=1; ($1 * 9 / 5) + 32" | bc; }
 ktom() { echo "scale=1; $1 / 1.609344" | bc; }
 mtok() { echo "scale=1; $1 / 0.621371" | bc; }
 
-kwhere() {
-  echo "context:   $(kubectx -c)"
-  echo "namespace: $(kubens -c)"
-}
-
 # Enable prompt caching for better performance and lower costs
 export DISABLE_PROMPT_CACHING=0
 
+# Powerlevel10k prompt theme.
+source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
+# Powerlevel10k configuration.
+[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh

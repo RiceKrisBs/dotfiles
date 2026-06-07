@@ -7,16 +7,22 @@ fi
 
 export PATH="$HOME/src/git.fullscript.io/kris.bucyk/dotfiles/bin:$PATH"
 
-alias temail='echo -n "kris.bucyk+$(date "+%Y%m%d%H%M")@fullscript.com" | tee /dev/tty | pbcopy'
-alias dev-rx='RX_ASSETS_DIR=/Users/kris.bucyk/src/git.fullscript.io/devops/rx/assets /Users/kris.bucyk/src/git.fullscript.io/devops/rx/public/darwin_arm64/rx'
+export EDITOR="nvim"
+export VISUAL="$EDITOR"
+
 alias ll="ls -laF"
 
 alias cdhw='cd ~/src/git.fullscript.io/developers/hw-admin'
 alias cdrx='cd ~/src/git.fullscript.io/devops/rx'
 alias cdpharm='cd ~/src/git.fullscript.io/devops/pharmacist'
-alias cdnitro='cd ~/src/git.fullscript.io/devops/nitro'
+alias cdnitro='cd ~/src/git.fullscript.io/ai/nitro'
 alias cddevops='cd ~/src/git.fullscript.io/devops'
+alias cdai='cd ~/src/git.fullscript.io/ai'
+
 alias whereami='pwd | tr -d "\n" | pbcopy'
+
+alias dev-rx='RX_ASSETS_DIR=/Users/kris.bucyk/src/git.fullscript.io/devops/rx/assets /Users/kris.bucyk/src/git.fullscript.io/devops/rx/public/darwin_arm64/rx'
+alias temail='echo -n "kris.bucyk+$(date "+%Y%m%d%H%M")@fullscript.com" | tee /dev/tty | pbcopy'
 
 ftoc() { echo "scale=1; ($1 - 32) * 5 / 9" | bc; }
 ctof() { echo "scale=1; ($1 * 9 / 5) + 32" | bc; }
@@ -30,3 +36,6 @@ export DISABLE_PROMPT_CACHING=0
 source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 # Powerlevel10k configuration.
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+
+# bun completions
+[ -s "/Users/kris.bucyk/.bunv/versions/1.3.9/_bun" ] && source "/Users/kris.bucyk/.bunv/versions/1.3.9/_bun"

@@ -13,6 +13,13 @@ cask "font-meslo-lg-nerd-font" # Nerd Font for prompt glyphs
 cask "alt-tab"
 cask "rectangle"
 
+# Editor
+brew "neovim"
+brew "ripgrep"
+brew "tree-sitter-cli"
+brew "ruff"
+brew "fnm"
+
 # Tools
 cask "bruno"
 brew "coralogix/tap/cx"

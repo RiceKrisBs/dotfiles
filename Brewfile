@@ -16,6 +16,7 @@ cask "rectangle"
 # Editor
 brew "neovim"
 brew "ripgrep"
+brew "fd"
 brew "tree-sitter-cli"
 brew "ruff"
 brew "fnm"

@@ -1,3 +1,54 @@
+local function current_directory()
+  local ok, oil = pcall(require, "oil")
+  if ok then
+    local oil_dir = oil.get_current_dir()
+    if oil_dir then
+      return vim.fs.normalize(oil_dir)
+    end
+  end
+
+  local buffer_name = vim.api.nvim_buf_get_name(0)
+  if buffer_name ~= "" then
+    local path = vim.fs.normalize(buffer_name)
+    local stat = vim.uv.fs_stat(path)
+
+    if stat and stat.type == "directory" then
+      return path
+    end
+
+    return vim.fs.dirname(path)
+  end
+
+  return vim.fn.getcwd()
+end
+
+local function git_root_for(path)
+  local result = vim.system({
+    "git",
+    "-C",
+    path,
+    "rev-parse",
+    "--show-toplevel",
+  }, { text = true }):wait()
+
+  if result.code ~= 0 then
+    return nil
+  end
+
+  return vim.fs.normalize(vim.trim(result.stdout or ""))
+end
+
+local function open_oil_git_root()
+  local root = git_root_for(current_directory())
+
+  if not root or root == "" then
+    vim.notify("Not inside a Git repo.", vim.log.levels.WARN)
+    return
+  end
+
+  require("oil").open(root)
+end
+
 return {
   {
     "stevearc/oil.nvim",
@@ -9,6 +60,13 @@ return {
       { "-", "<cmd>Oil<CR>", desc = "Open parent directory" },
       { "<leader>e", "<cmd>Oil<CR>", desc = "Open file explorer" },
     },
+    config = function(_, opts)
+      require("oil").setup(opts)
+
+      vim.api.nvim_create_user_command("OilGitRoot", open_oil_git_root, {
+        desc = "Open Oil at the current Git repo root",
+      })
+    end,
     opts = {
       default_file_explorer = true,
       skip_confirm_for_simple_edits = true,
@@ -20,6 +78,11 @@ return {
         ["q"] = "actions.close",
         ["<C-s>"] = "actions.select_vsplit",
         ["<C-h>"] = "actions.select_split",
+        ["gr"] = {
+          callback = open_oil_git_root,
+          desc = "Open git root",
+          mode = "n",
+        },
       },
     },
   },

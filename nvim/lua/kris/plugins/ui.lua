@@ -53,6 +53,7 @@ return {
         { "<leader>f", group = "find" },
         { "<leader>g", group = "git" },
         { "<leader>h", group = "hunks" },
+        { "<leader>m", group = "markdown" },
         { "<leader>t", group = "terminal" },
         { "<leader>x", group = "lists" },
       },

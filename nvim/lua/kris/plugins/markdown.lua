@@ -11,6 +11,8 @@ return {
       { "<leader>mp", "<cmd>RenderMarkdown preview<CR>", desc = "Preview markdown" },
       { "<leader>mt", "<cmd>RenderMarkdown toggle<CR>", desc = "Toggle markdown render" },
     },
-    opts = {},
+    opts = {
+      enabled = false,
+    },
   },
 }

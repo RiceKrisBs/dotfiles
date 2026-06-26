@@ -16,7 +16,7 @@ alias cdhw='cd ~/src/git.fullscript.io/developers/hw-admin'
 alias cdrx='cd ~/src/git.fullscript.io/devops/rx'
 alias cdpharm='cd ~/src/git.fullscript.io/devops/pharmacist'
 alias cdnitro='cd ~/src/git.fullscript.io/ai/nitro'
-alias cddot='cd ~/src/git.fullscript.io/kris.bucyk/dotfiles'
+alias cdkris='cd ~/src/git.fullscript.io/kris.bucyk'
 alias cddevops='cd ~/src/git.fullscript.io/devops'
 alias cdai='cd ~/src/git.fullscript.io/ai'
 

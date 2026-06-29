@@ -40,3 +40,6 @@ source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 
 # bun completions
 [ -s "/Users/kris.bucyk/.bunv/versions/1.3.9/_bun" ] && source "/Users/kris.bucyk/.bunv/versions/1.3.9/_bun"
+
+# Created by `pipx` on 2026-06-29 19:21:22
+export PATH="$PATH:/Users/kris.bucyk/.local/bin"

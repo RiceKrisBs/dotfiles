@@ -12,6 +12,7 @@ cask "font-meslo-lg-nerd-font" # Nerd Font for prompt glyphs
 # Workflow
 cask "alt-tab"
 cask "rectangle"
+brew "herdr"
 
 # Editor
 brew "neovim"

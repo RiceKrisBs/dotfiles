@@ -12,13 +12,19 @@ export VISUAL="$EDITOR"
 
 alias ll="ls -laF"
 
-alias cdhw='cd ~/src/git.fullscript.io/developers/hw-admin'
-alias cdrx='cd ~/src/git.fullscript.io/devops/rx'
-alias cdpharm='cd ~/src/git.fullscript.io/devops/pharmacist'
-alias cdnitro='cd ~/src/git.fullscript.io/ai/nitro'
-alias cdkris='cd ~/src/git.fullscript.io/kris.bucyk'
-alias cddevops='cd ~/src/git.fullscript.io/devops'
-alias cdai='cd ~/src/git.fullscript.io/ai'
+
+# gt <name> — jump to a repo under ~/src by its dir name.
+# Exact match wins; otherwise substring. Multiple matches open an fzf picker.
+gt() {
+  local out target
+  out="$(gt-bin "$@")" || return 1
+  if [[ "$(print -r -- "$out" | wc -l)" -gt 1 ]]; then
+    target="$(print -r -- "$out" | fzf --select-1 --exit-0 --height=40% --reverse)" || return 1
+  else
+    target="$out"
+  fi
+  [[ -n "$target" ]] && cd "$target"
+}
 
 alias whereami='pwd | tr -d "\n" | pbcopy'
 

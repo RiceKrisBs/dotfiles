@@ -13,18 +13,8 @@ export VISUAL="$EDITOR"
 alias ll="ls -laF"
 
 
-# gt <name> — jump to a repo under ~/src by its dir name.
-# Exact match wins; otherwise substring. Multiple matches open an fzf picker.
-gt() {
-  local out target
-  out="$(gt-bin "$@")" || return 1
-  if [[ "$(print -r -- "$out" | wc -l)" -gt 1 ]]; then
-    target="$(print -r -- "$out" | fzf --select-1 --exit-0 --height=40% --reverse)" || return 1
-  else
-    target="$out"
-  fi
-  [[ -n "$target" ]] && cd "$target"
-}
+# goto — jump to git repos under ~/src (see ~/.goto.zsh)
+source "$HOME/.goto.zsh"
 
 alias whereami='pwd | tr -d "\n" | pbcopy'
 

@@ -17,7 +17,7 @@ SUBCMD_SLUG="${SUBCMD// /_}"
 RUNS=50
 DELAY=1
 CMD_BEFORE="${RX_BEFORE:-/opt/fullscript/bin/rx}"
-CMD_AFTER="${RX_AFTER:-$HOME/src/git.fullscript.io/devops/rx/public/darwin_arm64/rx"
+CMD_AFTER="${RX_AFTER:-$HOME/src/git.fullscript.io/devops/rx/public/darwin_arm64/rx}"
 RESULTS_DIR="${TMPDIR:-/tmp}/rx-bench"
 mkdir -p "$RESULTS_DIR"
 RESULTS_BEFORE="$RESULTS_DIR/benchmark_${SUBCMD_SLUG}_before.csv"

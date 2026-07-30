@@ -10,7 +10,7 @@ export PATH="$HOME/src/git.fullscript.io/kris.bucyk/dotfiles/bin:$PATH"
 export EDITOR="nvim"
 export VISUAL="$EDITOR"
 
-alias ll="ls -laF"
+alias ll="ls -aFGhl"
 
 
 # goto — jump to git repos under ~/src (see ~/.goto.zsh)

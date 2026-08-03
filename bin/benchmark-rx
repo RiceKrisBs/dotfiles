@@ -1,5 +1,7 @@
 #!/bin/bash
-# Benchmarks two rx binaries by running each 50 times and comparing average wall time.
+# Benchmarks two rx binaries with hyperfine, using counterbalanced blocks
+# (AB, BA, AB, BA) so time-correlated drift cancels instead of landing on
+# one binary. Each block warms both binaries before measuring.
 # Usage: benchmark-rx <subcommand...>
 # Example: benchmark-rx dev up
 #          benchmark-rx cd status
@@ -12,82 +14,69 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-SUBCMD="$*"
-SUBCMD_SLUG="${SUBCMD// /_}"
-RUNS=50
-DELAY=1
 CMD_BEFORE="${RX_BEFORE:-/opt/fullscript/bin/rx}"
 CMD_AFTER="${RX_AFTER:-$HOME/src/git.fullscript.io/devops/rx/public/darwin_arm64/rx}"
-RESULTS_DIR="${TMPDIR:-/tmp}/rx-bench"
+BLOCKS="${RX_BENCH_BLOCKS:-4}"
+RUNS_PER_BLOCK="${RX_BENCH_RUNS:-12}"
+WARMUP="${RX_BENCH_WARMUP:-2}"
+
+for cmd in "$CMD_BEFORE" "$CMD_AFTER"; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Error: binary not found or not executable: $cmd" >&2
+    exit 1
+  fi
+done
+
+SUBCMD_SLUG=$(printf '%s' "$*" | tr -c 'A-Za-z0-9_-' '_')
+RESULTS_DIR="${TMPDIR:-/tmp}/rx-bench/$SUBCMD_SLUG"
+rm -rf "$RESULTS_DIR"
 mkdir -p "$RESULTS_DIR"
-RESULTS_BEFORE="$RESULTS_DIR/benchmark_${SUBCMD_SLUG}_before.csv"
-RESULTS_AFTER="$RESULTS_DIR/benchmark_${SUBCMD_SLUG}_after.csv"
 
-ts() {
-  perl -MTime::HiRes=time -e 'printf "%.6f\n", time()'
+quoted() {
+  printf '%q ' "$@"
 }
-
-run_benchmark() {
-  local label="$1"
-  local cmd="$2"
-  local outfile="$3"
-
-  echo "=== Benchmarking: $label ==="
-  echo "Command: $cmd $SUBCMD"
-  echo "Runs: $RUNS (+ 1 warmup)"
-  echo ""
-
-  echo "  Warmup run... (discarded)"
-  $cmd $SUBCMD >/dev/null 2>&1
-  sleep "$DELAY"
-
-  > "$outfile"
-
-  for i in $(seq 1 "$RUNS"); do
-    start=$(ts)
-    $cmd $SUBCMD >/dev/null 2>&1
-    end=$(ts)
-    elapsed=$(perl -e "printf '%.6f', $end - $start")
-    echo "$elapsed" >> "$outfile"
-    printf "  Run %2d/%d: %ss\n" "$i" "$RUNS" "$elapsed"
-    if [ "$i" -lt "$RUNS" ]; then
-      sleep "$DELAY"
-    fi
-  done
-
-  echo ""
-}
+BEFORE_CMDLINE=$(quoted "$CMD_BEFORE" "$@")
+AFTER_CMDLINE=$(quoted "$CMD_AFTER" "$@")
 
 echo "Starting benchmark at $(date)"
-echo "Subcommand: rx $SUBCMD"
+echo "Subcommand: rx $*"
+echo "Before: $CMD_BEFORE"
+echo "After:  $CMD_AFTER"
+echo "Plan: $BLOCKS blocks x ($WARMUP warmup + $RUNS_PER_BLOCK runs) per binary, alternating AB/BA order"
 echo ""
 
-run_benchmark "Before: $CMD_BEFORE" "$CMD_BEFORE" "$RESULTS_BEFORE"
-run_benchmark "After: $CMD_AFTER" "$CMD_AFTER" "$RESULTS_AFTER"
+for block in $(seq 1 "$BLOCKS"); do
+  json="$RESULTS_DIR/block_$block.json"
+  echo "=== Block $block/$BLOCKS ==="
+  if [ $((block % 2)) -eq 1 ]; then
+    hyperfine -N --warmup "$WARMUP" --runs "$RUNS_PER_BLOCK" --export-json "$json" \
+      -n before "$BEFORE_CMDLINE" -n after "$AFTER_CMDLINE"
+  else
+    hyperfine -N --warmup "$WARMUP" --runs "$RUNS_PER_BLOCK" --export-json "$json" \
+      -n after "$AFTER_CMDLINE" -n before "$BEFORE_CMDLINE"
+  fi
+  echo ""
+done
 
-echo ""
-echo "Raw data saved to: $RESULTS_BEFORE, $RESULTS_AFTER"
+echo "Raw data saved to: $RESULTS_DIR"
 echo ""
 
-# Print markdown table
-perl -e '
-  sub percentile {
-    my ($sorted, $p) = @_;
-    my $n = scalar @$sorted;
-    my $idx = ($p / 100) * ($n - 1);
-    my $lo = int($idx);
-    my $hi = $lo + 1;
-    $hi = $lo if $hi >= $n;
-    my $frac = $idx - $lo;
-    return $sorted->[$lo] * (1 - $frac) + $sorted->[$hi] * $frac;
+perl -MJSON::PP -e '
+  my $subcmd = shift @ARGV;
+  my %times;
+  for my $file (@ARGV) {
+    open my $fh, "<", $file or die "Cannot open $file: $!";
+    local $/;
+    my $data = JSON::PP->new->decode(<$fh>);
+    push @{ $times{ $_->{command} } }, @{ $_->{times} } for @{ $data->{results} };
   }
 
-  sub load {
-    my $f = shift;
-    open my $fh, "<", $f or die "Cannot open $f: $!";
-    my @vals;
-    while (<$fh>) { chomp; push @vals, $_ + 0 if /\S/; }
-    return \@vals;
+  sub percentile {
+    my ($sorted, $p) = @_;
+    my $idx = ($p / 100) * ($#$sorted);
+    my ($lo, $frac) = (int($idx), $idx - int($idx));
+    my $hi = $lo + 1 > $#$sorted ? $lo : $lo + 1;
+    return $sorted->[$lo] * (1 - $frac) + $sorted->[$hi] * $frac;
   }
 
   sub stats {
@@ -96,68 +85,55 @@ perl -e '
     my $sum = 0; $sum += $_ for @$vals;
     my $mean = $sum / $n;
     my @sorted = sort { $a <=> $b } @$vals;
-    my $min = $sorted[0];
-    my $max = $sorted[-1];
-    my $var = 0; $var += ($_ - $mean)**2 for @$vals; $var /= $n;
-    my $stddev = sqrt($var);
+    my $var = 0; $var += ($_ - $mean)**2 for @$vals;
+    $var /= ($n - 1);
     return {
       n      => $n,
       mean   => $mean,
-      min    => $min,
+      min    => $sorted[0],
       p50    => percentile(\@sorted, 50),
       p75    => percentile(\@sorted, 75),
       p90    => percentile(\@sorted, 90),
       p95    => percentile(\@sorted, 95),
-      p99    => percentile(\@sorted, 99),
-      max    => $max,
-      stddev => $stddev,
+      max    => $sorted[-1],
+      stddev => sqrt($var),
     };
   }
 
-  my ($file_before, $file_after, $subcmd) = @ARGV;
-  my $before = stats(load($file_before));
-  my $after  = stats(load($file_after));
+  my $before = stats($times{before});
+  my $after  = stats($times{after});
 
   my $diff = $after->{mean} - $before->{mean};
   my $pct  = ($diff / $before->{mean}) * 100;
   my $diff_str = sprintf "%+.3fs (%+.1f%%)", $diff, $pct;
+
+  my $sd_diff = $after->{stddev} - $before->{stddev};
+  my $sd_pct  = $before->{stddev} > 0 ? ($sd_diff / $before->{stddev}) * 100 : 0;
+  my $sd_diff_str = sprintf "%+.3fs (%+.1f%%)", $sd_diff, $sd_pct;
+
+  # Two-sample significance gate: |diff| must exceed ~2 combined standard errors.
+  my $se = sqrt($before->{stddev}**2 / $before->{n} + $after->{stddev}**2 / $after->{n});
   my $verdict;
-  if ($pct > 0) {
+  if (abs($diff) < 2 * $se) {
+    $verdict = sprintf "No significant difference (%.1f%% is within noise; need >%.1f%%)",
+      abs($pct), (2 * $se / $before->{mean}) * 100;
+  } elsif ($diff > 0) {
     $verdict = sprintf "Before is faster by %.1f%%", abs($pct);
-  } elsif ($pct < 0) {
-    $verdict = sprintf "After is faster by %.1f%%", abs($pct);
   } else {
-    $verdict = "No measurable difference";
+    $verdict = sprintf "After is faster by %.1f%%", abs($pct);
   }
 
   printf "### \`rx %s\` Benchmark Results (%d runs each)\n\n", $subcmd, $before->{n};
   printf "| Metric | Before | After | Difference |\n";
   printf "|--------|-------:|------:|-----------:|\n";
 
-  my @metrics = (
-    ["Mean",   "mean"],
-    ["Min",    "min"],
-    ["p50",    "p50"],
-    ["p75",    "p75"],
-    ["p90",    "p90"],
-    ["p95",    "p95"],
-    ["p99",    "p99"],
-    ["Max",    "max"],
-    ["Stddev", "stddev"],
-  );
-
-  my $sd_diff = $after->{stddev} - $before->{stddev};
-  my $sd_pct  = $before->{stddev} > 0 ? ($sd_diff / $before->{stddev}) * 100 : 0;
-  my $sd_diff_str = sprintf "%+.3fs (%+.1f%%)", $sd_diff, $sd_pct;
-
-  for my $m (@metrics) {
-    my ($label, $key) = @$m;
-    my $diff_col = $label eq "Mean"   ? $diff_str
-                 : $label eq "Stddev" ? $sd_diff_str
-                 : "";
+  for my $m (["Mean", $diff_str], ["Min", ""], ["p50", ""], ["p75", ""],
+             ["p90", ""], ["p95", ""], ["Max", ""], ["Stddev", $sd_diff_str]) {
+    my ($label, $diff_col) = @$m;
+    my $key = lc $label;
     printf "| %-6s | %.3fs | %.3fs | %s |\n",
       $label, $before->{$key}, $after->{$key}, $diff_col;
   }
 
   printf "\n**%s**\n", $verdict;
-' "$RESULTS_BEFORE" "$RESULTS_AFTER" "$SUBCMD"
+' "$*" "$RESULTS_DIR"/block_*.json

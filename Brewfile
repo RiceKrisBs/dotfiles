@@ -29,5 +29,6 @@ cask "dbeaver-community"
 brew "glab"
 
 # Utils
+brew "hyperfine"
 brew "jq"
 brew "yq"

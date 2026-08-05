@@ -2,6 +2,12 @@
 # Benchmarks two rx binaries with hyperfine, using counterbalanced blocks
 # (AB, BA, AB, BA) so time-correlated drift cancels instead of landing on
 # one binary. Each block warms both binaries before measuring.
+# Each binary runs against its own assets dir, since rx ships together with the
+# resources it shells out to: pointing one version's binary at another version's
+# assets can make it invoke them the wrong way. By default the installed binary gets
+# the installed assets and the repo build gets the repo's, so a working-tree change
+# spanning both is measured as a pair.
+#
 # Usage: benchmark-rx <subcommand...>
 # Example: benchmark-rx dev up
 #          benchmark-rx cd status
@@ -14,8 +20,14 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
+RX_REPO="${RX_REPO:-$HOME/src/git.fullscript.io/devops/rx}"
+
 CMD_BEFORE="${RX_BEFORE:-/opt/fullscript/bin/rx}"
-CMD_AFTER="${RX_AFTER:-$HOME/src/git.fullscript.io/devops/rx/public/darwin_arm64/rx}"
+CMD_AFTER="${RX_AFTER:-$RX_REPO/public/darwin_arm64/rx}"
+# Set either to "" to leave that side's assets dir unset, letting rx resolve its own
+# default — e.g. to compare two binaries against the same installed assets.
+BEFORE_ASSETS="${RX_BEFORE_ASSETS-$HOME/.rx/assets}"
+AFTER_ASSETS="${RX_AFTER_ASSETS-$RX_REPO/assets}"
 BLOCKS="${RX_BENCH_BLOCKS:-4}"
 RUNS_PER_BLOCK="${RX_BENCH_RUNS:-12}"
 WARMUP="${RX_BENCH_WARMUP:-2}"
@@ -23,6 +35,13 @@ WARMUP="${RX_BENCH_WARMUP:-2}"
 for cmd in "$CMD_BEFORE" "$CMD_AFTER"; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Error: binary not found or not executable: $cmd" >&2
+    exit 1
+  fi
+done
+
+for dir in "$BEFORE_ASSETS" "$AFTER_ASSETS"; do
+  if [ -n "$dir" ] && [ ! -d "$dir" ]; then
+    echo "Error: assets directory not found: $dir" >&2
     exit 1
   fi
 done
@@ -35,13 +54,25 @@ mkdir -p "$RESULTS_DIR"
 quoted() {
   printf '%q ' "$@"
 }
-BEFORE_CMDLINE=$(quoted "$CMD_BEFORE" "$@")
-AFTER_CMDLINE=$(quoted "$CMD_AFTER" "$@")
+
+# hyperfine -N runs the command without a shell, so an assets dir is applied by
+# prefixing env(1) rather than with a VAR=value shell assignment.
+cmdline() {
+  local binary="$1" assets="$2"
+  shift 2
+  if [ -n "$assets" ]; then
+    quoted /usr/bin/env "RX_ASSETS_DIR=$assets" "$binary" "$@"
+  else
+    quoted "$binary" "$@"
+  fi
+}
+BEFORE_CMDLINE=$(cmdline "$CMD_BEFORE" "$BEFORE_ASSETS" "$@")
+AFTER_CMDLINE=$(cmdline "$CMD_AFTER" "$AFTER_ASSETS" "$@")
 
 echo "Starting benchmark at $(date)"
 echo "Subcommand: rx $*"
-echo "Before: $CMD_BEFORE"
-echo "After:  $CMD_AFTER"
+echo "Before: $CMD_BEFORE (assets: ${BEFORE_ASSETS:-<rx default>})"
+echo "After:  $CMD_AFTER (assets: ${AFTER_ASSETS:-<rx default>})"
 echo "Plan: $BLOCKS blocks x ($WARMUP warmup + $RUNS_PER_BLOCK runs) per binary, alternating AB/BA order"
 echo ""
 

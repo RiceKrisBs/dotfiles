@@ -16,7 +16,7 @@ alias ll="ls -aFGhl"
 # goto — jump to git repos under ~/src (see ~/.goto.zsh)
 source "$HOME/.goto.zsh"
 
-alias whereami='pwd | tr -d "\n" | pbcopy'
+alias wmi='pwd | tr -d "\n" | pbcopy'
 
 alias dev-rx='RX_ASSETS_DIR=/Users/kris.bucyk/src/git.fullscript.io/devops/rx/assets /Users/kris.bucyk/src/git.fullscript.io/devops/rx/public/darwin_arm64/rx'
 alias temail='echo -n "kris.bucyk+$(date "+%Y%m%d%H%M")@fullscript.com" | tee /dev/tty | pbcopy'

@@ -31,4 +31,5 @@ brew "glab"
 # Utils
 brew "hyperfine"
 brew "jq"
+brew "tree"
 brew "yq"

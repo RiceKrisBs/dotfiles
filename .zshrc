@@ -15,6 +15,7 @@ alias ll="ls -aFGhl"
 
 # goto — jump to git repos under ~/src (see ~/.goto.zsh)
 source "$HOME/.goto.zsh"
+export GOTO_EXTRA_PRUNE=.kris-ignore,.claude
 
 alias wmi='pwd | tr -d "\n" | pbcopy'
 

@@ -15,6 +15,7 @@ local servers = {
   "pyright",
   "ruff",
   "ruby_lsp",
+  "rust_analyzer",
   "sorbet",
   "sqlls",
   "taplo",
@@ -24,7 +25,7 @@ local servers = {
   "yamlls",
 }
 
-local external_servers = { "gopls", "ruby_lsp", "sorbet", "ruff" }
+local external_servers = { "gopls", "ruby_lsp", "sorbet", "ruff", "rust_analyzer" }
 
 local mason_servers = vim.tbl_filter(function(server)
   return not vim.tbl_contains(external_servers, server)
@@ -84,6 +85,7 @@ local server_commands = {
   gopls = "gopls",
   ruff = "ruff",
   ruby_lsp = "ruby-lsp",
+  rust_analyzer = "rust-analyzer",
 }
 
 local function should_enable(server)
@@ -160,6 +162,17 @@ return {
         init_options = {
           settings = {
             lineLength = 100,
+          },
+        },
+      })
+
+      vim.lsp.config("rust_analyzer", {
+        capabilities = capabilities,
+        settings = {
+          ["rust-analyzer"] = {
+            check = {
+              command = "clippy",
+            },
           },
         },
       })

@@ -41,6 +41,7 @@ return {
         lua = { "stylua" },
         markdown = { "prettierd", "prettier", stop_after_first = true },
         python = { "ruff_format", "black", stop_after_first = true },
+        rust = { "rustfmt" },
         sh = { "shfmt" },
         sql = { "sql_formatter" },
         terraform = { "terraform_fmt" },

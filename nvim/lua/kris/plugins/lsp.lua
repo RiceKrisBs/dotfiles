@@ -153,6 +153,9 @@ return {
             schemaStore = {
               enable = true,
             },
+            customTags = {
+              "!reference sequence",
+            },
           },
         },
       })

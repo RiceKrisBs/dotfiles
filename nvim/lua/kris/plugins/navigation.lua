@@ -49,6 +49,33 @@ local function open_oil_git_root()
   require("oil").open(root)
 end
 
+-- .kris-ignore/ is hidden and excluded by the global ~/.gitignore, so the
+-- default find_files skips it. --no-ignore-global drops only that rule; nested
+-- .gitignore files (e.g. node_modules in worktrees) still apply.
+local function find_kris_ignore_files()
+  local dir = vim.fs.joinpath(vim.fn.getcwd(), ".kris-ignore")
+
+  if vim.fn.isdirectory(dir) == 0 then
+    vim.notify("No .kris-ignore/ in " .. vim.fn.getcwd(), vim.log.levels.WARN)
+    return
+  end
+
+  require("telescope.builtin").find_files({
+    prompt_title = "Find .kris-ignore files",
+    find_command = {
+      "rg",
+      "--files",
+      "--color",
+      "never",
+      "--hidden",
+      "--no-ignore-global",
+      "--glob",
+      "!.git",
+      ".kris-ignore",
+    },
+  })
+end
+
 return {
   {
     "stevearc/oil.nvim",
@@ -108,6 +135,7 @@ return {
       { "<leader>fr", "<cmd>Telescope oldfiles<CR>", desc = "Recent files" },
       { "<leader>fd", "<cmd>Telescope diagnostics<CR>", desc = "Find diagnostics" },
       { "<leader>fk", "<cmd>Telescope keymaps<CR>", desc = "Find keymaps" },
+      { "<leader>fi", find_kris_ignore_files, desc = "Find .kris-ignore files" },
       { "<C-p>", "<cmd>Telescope git_files<CR>", desc = "Find git files" },
     },
     opts = {

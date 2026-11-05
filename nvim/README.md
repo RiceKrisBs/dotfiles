@@ -14,6 +14,7 @@ For Ruby, Ruby LSP is the primary server. Sorbet is also enabled, but only in re
 - `-` opens the parent directory with Oil.
 - `<C-p>` finds Git-tracked files.
 - `<leader>ff` finds files.
+- `<leader>fi` finds files in `.kris-ignore/` (git-ignored scratch notes).
 - `<leader>fg` searches project text.
 - `gd`, `gr`, `K`, `<leader>rn`, and `<leader>ca` are the core LSP motions/actions.
 - `<C-w> h/j/k/l` moves between Neovim windows.

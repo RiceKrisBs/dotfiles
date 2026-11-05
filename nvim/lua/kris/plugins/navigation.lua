@@ -112,6 +112,18 @@ return {
     },
     opts = {
       defaults = {
+        -- Telescope's default rg args omit --hidden, so dotfiles are skipped.
+        vimgrep_arguments = {
+          "rg",
+          "--color=never",
+          "--no-heading",
+          "--with-filename",
+          "--line-number",
+          "--column",
+          "--smart-case",
+          "--hidden",
+          "--glob=!.git/",
+        },
         mappings = {
           i = {
             ["<C-j>"] = "move_selection_next",

@@ -5,6 +5,7 @@ local servers = {
   "docker_compose_language_service",
   "dockerls",
   "eslint",
+  "gitlab_ci_ls",
   "gopls",
   "graphql",
   "helm_ls",
@@ -269,6 +270,10 @@ return {
     cmd = "Mason",
     opts = {
       PATH = "append",
+      registries = {
+        "github:RiceKrisBs/mason-registry",
+        "github:mason-org/mason-registry",
+      },
       ui = {
         border = "rounded",
       },

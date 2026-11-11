@@ -81,6 +81,16 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
   group = augroup,
   pattern = {
+    "*/ci/*.yaml",
+    "*/ci/*.yml",
+  },
+  callback = set_filetype("yaml.gitlab"),
+  desc = "Detect GitLab CI include files",
+})
+
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  group = augroup,
+  pattern = {
     "playbook.yaml",
     "playbook.yml",
     "site.yaml",

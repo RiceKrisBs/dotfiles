@@ -67,6 +67,7 @@ local filetypes = {
   "yaml",
   "yaml.ansible",
   "yaml.docker-compose",
+  "yaml.gitlab",
   "yaml.helm-values",
 }
 
@@ -85,6 +86,7 @@ return {
       vim.treesitter.language.register("yaml", {
         "yaml.ansible",
         "yaml.docker-compose",
+        "yaml.gitlab",
         "yaml.helm-values",
       })
 

@@ -8,6 +8,23 @@ The config is tuned for Ruby, Go, TypeScript/JavaScript, Python, Terraform/HCL, 
 
 For Ruby, Ruby LSP is the primary server. Sorbet is also enabled, but only in repos with `sorbet/config`, and its non-diagnostic capabilities are disabled so Ruby LSP owns formatting, navigation, completion, and general Ruby behavior.
 
+## GitLab CI
+
+`gd` and `gr` work on `extends`, `needs`, `!reference`, and `include` in GitLab CI files, using [`gitlab-ci-ls`](https://github.com/RiceKrisBs/gitlab-ci-ls), a fork of `alesbrelih/gitlab-ci-ls`.
+
+- Mason installs the fork's prebuilt Apple Silicon binary from [`RiceKrisBs/mason-registry`](https://github.com/RiceKrisBs/mason-registry). The registry is listed first in `registries` in `lua/kris/plugins/lsp.lua`, ahead of the default registry. No Rust toolchain is needed.
+- Files under a `ci/` directory are detected as `yaml.gitlab` in `lua/kris/core/autocmds.lua`, and `yaml.gitlab` is registered with the `yaml` Treesitter parser.
+- The server only follows `include:` from the repo's root `.gitlab-ci.yml`. For child pipelines, add a `.gitlab-ci-ls.yml` at the repo root. It replaces the default root, so list `.gitlab-ci.yml` too:
+
+  ```yaml
+  root_files:
+    - .gitlab-ci.yml
+    - ci/child_pipelines/*.yaml
+  ```
+
+  `.gitlab-ci-ls.yml` is in the global gitignore, so it stays out of the repo.
+- The server needs a few seconds after a file opens before `gd` works, because it indexes the includes and clones remote `project:` includes with your git credentials.
+
 ## First Moves
 
 - `Space` is the leader key.
